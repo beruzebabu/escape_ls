@@ -82,29 +82,6 @@ namespace escape_ls.Server
             }
         }
 
-/*        [Tick]
-        public Task OnTick()
-        {
-            foreach (Player p in Players)
-            {
-                if (escapePlayerList.FindPlayer(p) == default(EscapePlayer))
-                {
-                    escapePlayerList.Add(new EscapePlayer(p));
-                }
-            }
-
-            foreach (EscapePlayer escapePlayer in escapePlayerList)
-            {
-                if (string.IsNullOrEmpty(escapePlayer.Player.Name))
-                {
-                    escapePlayerList.Remove(escapePlayer);
-                    break;
-                }
-            }
-
-            return Task.FromResult(0);
-        }*/
-
         [Tick]
         public Task CheckPlayersEscaped()
         {

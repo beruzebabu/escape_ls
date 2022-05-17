@@ -16,22 +16,30 @@ namespace escape_ls.Client
             SetBlipColour(blip, 6);
             SetBlipAlpha(blip, 64);
 
+            SetRandomTrains(true);
+            SetRandomBoats(true);
+
             TriggerEvent("chat:addMessage", new
             {
                 color = new int[] { 255, 255, 255 },
                 multiline = false,
-                args = new[] { "Gamemode", $"Escape Los Santos by getting out of the ^*^1RED^7 zone marked on the map!" },
+                args = new[] { "Gamemode", $"^*Escape Los Santos by getting out of the ^1RED^7 zone marked on the map!" },
             });
         }
 
         [Tick]
         public Task OnTick()
         {
+            SetParkedVehicleDensityMultiplierThisFrame(1.0f);
+            SetRandomVehicleDensityMultiplierThisFrame(0.8f);
             return Task.FromResult(0);
         }
 
         private void SetWantedLevelEvent(int level)
         {
+            if (LocalPlayer.Character.Position.X > 1630 && LocalPlayer.Character.Position.X < 1660 && LocalPlayer.Character.Position.Y > 2510 && LocalPlayer.Character.Position.Y < 2545)
+                return;
+
             SetPlayerWantedLevel(LocalPlayer.Handle, level, false);
             SetWantedLevelMultiplier(1.5f);
             SetWantedLevelDifficulty(LocalPlayer.Handle, 1.0f);
