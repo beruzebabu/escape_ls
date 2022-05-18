@@ -9,11 +9,13 @@ namespace escape_ls.Server
     {
         public Player Player { get; }
         public bool HasEscaped { get; set; }
+        public int Lobby { get; set; }
 
         public EscapePlayer(Player player)
         {
             this.Player = player;
             this.HasEscaped = false;
+            this.Lobby = -1;
         }
     }
 

@@ -15,6 +15,7 @@ namespace escape_ls.Server
             Debug.WriteLine($"Escape Los Santos {Helpers.GetAssemblyVersion()} server loaded");
             EventHandlers["playerJoining"] += new Action<Player, string>(OnPlayerJoining);
             EventHandlers["playerDropped"] += new Action<Player, string>(OnPlayerDropped);
+            EventHandlers["escape_ls:LobbySelected"] += new Action<int, int>(OnLobbySelected);
         }
 
         private void OnPlayerJoining([FromSource] Player player, string oldId)
@@ -25,6 +26,8 @@ namespace escape_ls.Server
 
             EscapePlayer joinedPlayer = escapePlayerList.FindPlayer(player);
             Debug.WriteLine($"{joinedPlayer.Player.Name} added to EscapePlayerList");
+
+            player.TriggerEvent("escape_ls:toggleJoinScreen");
         }
 
         private void OnPlayerDropped([FromSource] Player player, string reason)
@@ -35,50 +38,27 @@ namespace escape_ls.Server
                 Debug.WriteLine($"{player.Name} dropped from EscapePlayerList");
         }
 
-
-        [Command("spawn_car")]
-        public void CommandSpawnCar(Player src, string[] args)
+        private void OnLobbySelected(int playerId, int lobby)
         {
-            if (args.Length < 1)
+            if (lobby > 0)
             {
-                Debug.WriteLine("Missing vehicle model argument");
-                return;
-            }
+                try
+                {
+                    Player player = Players[playerId];
+                    EscapePlayer ep = escapePlayerList.FindPlayer(player);
+                    if (ep.Lobby < 0)
+                    {
+                        ep.Lobby = lobby;
+                        SetPlayerRoutingBucket(player.Handle, lobby);
 
-            string model = args[0].Trim();
+                        Debug.WriteLine($"{player.Name} set lobby to {lobby}");
 
-            Debug.WriteLine($"Spawning {model}");
-
-            uint hash = (uint)GetHashKey(model);
-            int vehicle = CreateVehicle(hash, src.Character.Position.X, src.Character.Position.Y, src.Character.Position.Z, src.Character.Heading, true, false);
-            SetPedIntoVehicle(src.Character.Handle, vehicle, -1);
-        }
-
-        [Command("coords")]
-        public void CommandGetCoordinates(Player src)
-        {
-            Debug.WriteLine($"{src.Character.Position}");
-        }
-
-        [Command("teleport")]
-        public void CommandTeleportPlayer(Player src, string[] args)
-        {
-            if (args.Length < 3)
-            {
-                Debug.WriteLine("Missing coordinate arguments");
-                return;
-            }
-
-            try
-            {
-                float x = float.Parse(args[0].Trim());
-                float y = float.Parse(args[1].Trim());
-                float z = float.Parse(args[2].Trim());
-
-                SetEntityCoords(src.Character.Handle, x, y, z, true, false, false, false);
-            } catch {
-                Debug.WriteLine("Invalid coordinate arguments");
-                return;
+                        player.TriggerEvent("escape_ls:toggleJoinScreen");
+                    }
+                } catch
+                {
+                    Debug.WriteLine($"Couldn't assign lobby {lobby} for playerid {playerId}");
+                }
             }
         }
 

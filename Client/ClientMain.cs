@@ -7,9 +7,12 @@ namespace escape_ls.Client
 {
     public class ClientMain : BaseScript
     {
+        public bool showJoinScreen = false;
+
         public ClientMain()
         {
             Debug.WriteLine($"Escape Los Santos {Helpers.GetAssemblyVersion()} client loaded");
+            EventHandlers["escape_ls:toggleJoinScreen"] += new Action(ToggleJoinScreen);
             EventHandlers["escape_ls:setWantedLevel"] += new Action<int>(SetWantedLevelEvent);
 
             int blip = AddBlipForArea(0, 1500, 50, 10000, 13000);
@@ -25,6 +28,13 @@ namespace escape_ls.Client
                 multiline = false,
                 args = new[] { "Gamemode", $"^*Escape Los Santos by getting out of the ^1RED^7 zone marked on the map!" },
             });
+
+            TriggerEvent("chat:addMessage", new
+            {
+                color = new int[] { 255, 255, 255 },
+                multiline = false,
+                args = new[] { "Server", $"^*Join a lobby by typing /lobby <number>" },
+            });
         }
 
         [Tick]
@@ -32,7 +42,32 @@ namespace escape_ls.Client
         {
             SetParkedVehicleDensityMultiplierThisFrame(1.0f);
             SetRandomVehicleDensityMultiplierThisFrame(0.8f);
+
+            if (showJoinScreen)
+            {
+                DrawJoinScreen();
+            }
+
             return Task.FromResult(0);
+        }
+
+        public void ToggleJoinScreen()
+        {
+            showJoinScreen = !showJoinScreen;
+
+            if (showJoinScreen)
+            {
+                FreezeEntityPosition(LocalPlayer.Character.Handle, true);
+            }
+            else
+            {
+                FreezeEntityPosition(LocalPlayer.Character.Handle, false);
+            }
+        }
+
+        public void DrawJoinScreen()
+        {
+            FreezeEntityPosition(LocalPlayer.Character.Handle, true);
         }
 
         private void SetWantedLevelEvent(int level)
