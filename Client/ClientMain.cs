@@ -51,6 +51,26 @@ namespace escape_ls.Client
             return Task.FromResult(0);
         }
 
+        [Tick]
+        public Task OtherPlayersCheck()
+        {
+            foreach (Player otherPlayer in Players)
+            {
+                if (otherPlayer.Handle == LocalPlayer.Handle)
+                    continue;
+
+                int blip = GetBlipFromEntity(otherPlayer.Character.Handle);
+
+                if (blip == 0)
+                {
+                    int localPlayerBlip = AddBlipForEntity(otherPlayer.Character.Handle);
+                    SetBlipAsFriendly(localPlayerBlip, true);
+                }
+            }
+
+            return Delay(1000);
+        }
+
         public void ToggleJoinScreen()
         {
             showJoinScreen = !showJoinScreen;
