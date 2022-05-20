@@ -32,23 +32,6 @@ namespace escape_ls.Server
             Debug.WriteLine($"{src.Character.Position}");
         }
 
-        [Command("lobby")]
-        public void CommandSelectLobby(Player src, string[] args)
-        {
-            try
-            {
-                int lobby = int.Parse(args[0].Trim());
-
-                Debug.WriteLine($"Player: {src.Name} - {lobby}");
-
-                TriggerEvent("escape_ls:LobbySelected", int.Parse(src.Handle.Trim()), lobby);
-            } catch
-            {
-                Debug.WriteLine("Invalid lobby entered");
-                return;
-            }
-        }
-
         [Command("teleport")]
         public void CommandTeleportPlayer(Player src, string[] args)
         {
@@ -69,6 +52,38 @@ namespace escape_ls.Server
             catch
             {
                 Debug.WriteLine("Invalid coordinate arguments");
+                return;
+            }
+        }
+
+        [Command("lobby")]
+        public void CommandSelectLobby(Player src, string[] args)
+        {
+            try
+            {
+                int lobby = int.Parse(args[0].Trim());
+
+                TriggerEvent("escape_ls:LobbySelected", int.Parse(src.Handle.Trim()), lobby);
+            }
+            catch
+            {
+                Debug.WriteLine("Invalid lobby entered");
+                return;
+            }
+        }
+
+        [Command("difficulty")]
+        public void CommandSelectDifficulty(Player src, string[] args)
+        {
+            try
+            {
+                int difficulty = int.Parse(args[0].Trim());
+
+                TriggerEvent("escape_ls:DifficultySelected", int.Parse(src.Handle.Trim()), difficulty);
+            }
+            catch
+            {
+                Debug.WriteLine("Invalid difficulty entered");
                 return;
             }
         }

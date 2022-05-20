@@ -9,6 +9,7 @@ namespace escape_ls.Server
     public class ServerMain : BaseScript
     {
         public EscapePlayerList escapePlayerList = new EscapePlayerList();
+        public LobbyList lobbies = new LobbyList();
 
         public ServerMain()
         {
@@ -16,6 +17,7 @@ namespace escape_ls.Server
             EventHandlers["playerJoining"] += new Action<Player, string>(OnPlayerJoining);
             EventHandlers["playerDropped"] += new Action<Player, string>(OnPlayerDropped);
             EventHandlers["escape_ls:LobbySelected"] += new Action<int, int>(OnLobbySelected);
+            EventHandlers["escape_ls:DifficultySelected"] += new Action<int, int>(OnDifficultySelected);
         }
 
         private void OnPlayerJoining([FromSource] Player player, string oldId)
@@ -46,18 +48,64 @@ namespace escape_ls.Server
                 {
                     Player player = Players[playerId];
                     EscapePlayer ep = escapePlayerList.FindPlayer(player);
-                    if (ep.Lobby < 0)
+                    if (ep.Lobby == default(Lobby))
                     {
-                        ep.Lobby = lobby;
+                        Lobby existingLobby = lobbies.FindLobbyById(lobby);
+                        if (existingLobby == default(Lobby))
+                        {
+                            Lobby newLobby = new Lobby(lobby, -1);
+                            ep.Lobby = newLobby;
+                            lobbies.Add(newLobby);
+
+                            TriggerClientEvent("chat:addMessage", new
+                            {
+                                color = new int[] { 255, 255, 255 },
+                                multiline = false,
+                                args = new[] { "Gamemode", $"Lobby set to ^2{lobby}^7, ^*please set a difficulty by typing ^3/difficulty <number>" },
+                            });
+                        } else
+                        {
+                            ep.Lobby = existingLobby;
+
+                            TriggerClientEvent("chat:addMessage", new
+                            {
+                                color = new int[] { 255, 255, 255 },
+                                multiline = false,
+                                args = new[] { "Gamemode", $"Lobby set to ^2{lobby}^7, ^*difficulty is {existingLobby.Difficulty}" },
+                            });
+                        }
+
                         SetPlayerRoutingBucket(player.Handle, lobby);
 
                         Debug.WriteLine($"{player.Name} set lobby to {lobby}");
-
-                        player.TriggerEvent("escape_ls:toggleJoinScreen");
                     }
                 } catch
                 {
                     Debug.WriteLine($"Couldn't assign lobby {lobby} for playerid {playerId}");
+                }
+            }
+        }
+
+        private void OnDifficultySelected(int playerId, int difficulty)
+        {
+            if (difficulty > 0)
+            {
+                try
+                {
+                    Player player = Players[playerId];
+                    EscapePlayer ep = escapePlayerList.FindPlayer(player);
+                    if (ep.Lobby != default(Lobby) && ep.Lobby.Difficulty < 0)
+                    {
+                        ep.Lobby.Difficulty = difficulty;
+
+                        Debug.WriteLine($"{player.Name} set difficulty to {difficulty}");
+
+                        player.TriggerEvent("escape_ls:toggleJoinScreen");
+                    }
+                }
+                catch
+                {
+                    Debug.WriteLine($"Couldn't assign lobby difficulty for playerid {playerId}");
                 }
             }
         }
@@ -77,7 +125,7 @@ namespace escape_ls.Server
                     {
                         color = new int[] { 255, 255, 255 },
                         multiline = false,
-                        args = new[] { "Server", $"{p.Name} has escaped Los Santos!" },
+                        args = new[] { "Gamemode", $"{p.Name} has escaped Los Santos!" },
                     });
                 }
             }
@@ -93,10 +141,15 @@ namespace escape_ls.Server
                 if (p.Character == null)
                     continue;
 
-                if (escapePlayerList.FindPlayer(p).HasEscaped == false && GetPlayerWantedLevel(p.Handle) < 1)
+                EscapePlayer ep = escapePlayerList.FindPlayer(p);
+
+                if (ep.HasEscaped == false 
+                    && GetPlayerWantedLevel(p.Handle) < 1 
+                    && ep.Lobby != default(Lobby) 
+                    && ep.Lobby.Difficulty > 0)
                 {
-                    SetPlayerWantedLevel(p.Handle, 2, false);
-                    p.TriggerEvent("escape_ls:setWantedLevel", 2);
+                    SetPlayerWantedLevel(p.Handle, ep.Lobby.Difficulty, false);
+                    p.TriggerEvent("escape_ls:setWantedLevel", ep.Lobby.Difficulty);
                 }
             }
 

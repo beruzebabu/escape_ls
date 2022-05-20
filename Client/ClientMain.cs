@@ -33,7 +33,7 @@ namespace escape_ls.Client
             {
                 color = new int[] { 255, 255, 255 },
                 multiline = false,
-                args = new[] { "Server", $"^*Join a lobby by typing /lobby <number>" },
+                args = new[] { "Gamemode", $"^*Join a lobby by typing ^3/lobby <number>" },
             });
         }
 
