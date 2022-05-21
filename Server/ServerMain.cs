@@ -73,6 +73,9 @@ namespace escape_ls.Server
                                 multiline = false,
                                 args = new[] { "Gamemode", $"Lobby set to ^2{lobby}^7, ^*difficulty is {existingLobby.Difficulty}" },
                             });
+
+                            player.TriggerEvent("escape_ls:toggleJoinScreen");
+                            player.TriggerEvent("escape_ls:startEscape");
                         }
 
                         SetPlayerRoutingBucket(player.Handle, lobby);
@@ -101,6 +104,7 @@ namespace escape_ls.Server
                         Debug.WriteLine($"{player.Name} set difficulty to {difficulty}");
 
                         player.TriggerEvent("escape_ls:toggleJoinScreen");
+                        player.TriggerEvent("escape_ls:startEscape");
                     }
                 }
                 catch

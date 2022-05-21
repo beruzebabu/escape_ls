@@ -14,6 +14,7 @@ namespace escape_ls.Client
             Debug.WriteLine($"Escape Los Santos {Helpers.GetAssemblyVersion()} client loaded");
             EventHandlers["escape_ls:toggleJoinScreen"] += new Action(ToggleJoinScreen);
             EventHandlers["escape_ls:setWantedLevel"] += new Action<int>(SetWantedLevelEvent);
+            EventHandlers["escape_ls:startEscape"] += new Action(StartEscape);
 
             int blip = AddBlipForArea(0, 1500, 50, 10000, 13000);
             SetBlipColour(blip, 6);
@@ -88,6 +89,28 @@ namespace escape_ls.Client
         public void DrawJoinScreen()
         {
             FreezeEntityPosition(LocalPlayer.Character.Handle, true);
+        }
+
+        public async void StartEscape()
+        {
+            RequestModel((uint)GetHashKey("s_m_m_prisguard_01"));
+            RequestModel((uint)GetHashKey("s_m_y_prisoner_01"));
+
+            while (!HasModelLoaded((uint)GetHashKey("s_m_y_prisoner_01")))
+            {
+                await Delay(50);
+            }
+
+            int prisonGuardPed = CreatePed(0, (uint)GetHashKey("s_m_m_prisguard_01"), 1643, 2538, 45.5f, 120, true, true);
+            GiveWeaponToPed(prisonGuardPed, (uint)GetHashKey("weapon_pistol"), 12, false, true);
+            SetCurrentPedWeapon(prisonGuardPed, (uint)GetHashKey("weapon_pistol"), true);
+
+            int prisonerPed = CreatePed(0, (uint)GetHashKey("s_m_y_prisoner_01"), 1645, 2538, 45.5f, 120, true, true);
+            GiveWeaponToPed(prisonerPed, (uint)GetHashKey("weapon_switchblade"), 12, false, true);
+            SetCurrentPedWeapon(prisonerPed, (uint)GetHashKey("weapon_switchblade"), true);
+
+            ApplyDamageToPed(prisonGuardPed, 101, false);
+            ApplyDamageToPed(prisonerPed, 101, false);
         }
 
         private void SetWantedLevelEvent(int level)
