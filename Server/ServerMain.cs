@@ -18,6 +18,7 @@ namespace escape_ls.Server
             EventHandlers["playerDropped"] += new Action<Player, string>(OnPlayerDropped);
             EventHandlers["escape_ls:LobbySelected"] += new Action<int, int>(OnLobbySelected);
             EventHandlers["escape_ls:DifficultySelected"] += new Action<int, int>(OnDifficultySelected);
+            EventHandlers["escape_ls:LobbyRestarted"] += new Action<int>(OnLobbyRestarted);
         }
 
         private void OnPlayerJoining([FromSource] Player player, string oldId)
@@ -36,6 +37,8 @@ namespace escape_ls.Server
         {
             Debug.WriteLine($"Player {player.Name} dropped (Reason: {reason}).");
             EscapePlayer droppedPlayer = escapePlayerList.FindPlayer(player);
+            if (droppedPlayer.Lobby != default(Lobby))
+                droppedPlayer.Lobby.LobbyPlayers.Remove(droppedPlayer);
             if (escapePlayerList.Remove(droppedPlayer))
                 Debug.WriteLine($"{player.Name} dropped from EscapePlayerList");
         }
@@ -53,7 +56,7 @@ namespace escape_ls.Server
                         Lobby existingLobby = lobbies.FindLobbyById(lobby);
                         if (existingLobby == default(Lobby))
                         {
-                            Lobby newLobby = new Lobby(lobby, -1);
+                            Lobby newLobby = new Lobby(lobby, -1, ep);
                             ep.Lobby = newLobby;
                             lobbies.Add(newLobby);
 
@@ -66,6 +69,7 @@ namespace escape_ls.Server
                         } else
                         {
                             ep.Lobby = existingLobby;
+                            ep.Lobby.LobbyPlayers.Add(ep);
 
                             TriggerClientEvent("chat:addMessage", new
                             {
@@ -111,6 +115,35 @@ namespace escape_ls.Server
                 {
                     Debug.WriteLine($"Couldn't assign lobby difficulty for playerid {playerId}");
                 }
+            }
+        }
+
+        private void OnLobbyRestarted(int playerId)
+        {
+            try
+            {
+                Player player = Players[playerId];
+                EscapePlayer ep = escapePlayerList.FindPlayer(player);
+                if (ep.Lobby != default(Lobby) && ep.Lobby.Id != 0 && ep.Lobby.Creator == ep)
+                {
+                    TriggerClientEvent("chat:addMessage", new
+                    {
+                        color = new int[] { 255, 255, 255 },
+                        multiline = false,
+                        args = new[] { "Gamemode", $"Lobby ^2{ep.Lobby.Id}^7 restarted" },
+                    });
+
+                    foreach (EscapePlayer escapePlayer in ep.Lobby.LobbyPlayers)
+                    {
+                        escapePlayer.Player.TriggerEvent("escape_ls:restartEscape");
+                    }
+
+                    Debug.WriteLine($"{player.Name} restarted lobby {ep.Lobby.Id}");
+                }
+            }
+            catch
+            {
+                Debug.WriteLine($"Couldn't restart lobby for playerid {playerId}");
             }
         }
 

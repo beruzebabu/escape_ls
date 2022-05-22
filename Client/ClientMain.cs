@@ -15,6 +15,7 @@ namespace escape_ls.Client
             EventHandlers["escape_ls:toggleJoinScreen"] += new Action(ToggleJoinScreen);
             EventHandlers["escape_ls:setWantedLevel"] += new Action<int>(SetWantedLevelEvent);
             EventHandlers["escape_ls:startEscape"] += new Action(StartEscape);
+            EventHandlers["escape_ls:restartEscape"] += new Action(RestartEscape);
 
             int blip = AddBlipForArea(0, 1500, 50, 10000, 13000);
             SetBlipColour(blip, 6);
@@ -93,6 +94,9 @@ namespace escape_ls.Client
 
         public async void StartEscape()
         {
+            DoScreenFadeOut(500);
+            await Delay(250);
+
             RequestModel((uint)GetHashKey("s_m_m_prisguard_01"));
             RequestModel((uint)GetHashKey("s_m_y_prisoner_01"));
 
@@ -111,6 +115,19 @@ namespace escape_ls.Client
 
             ApplyDamageToPed(prisonGuardPed, 101, false);
             ApplyDamageToPed(prisonerPed, 101, false);
+
+            await Delay(250);
+
+            DoScreenFadeIn(500);
+            await Delay(500);
+        }
+
+        public async void RestartEscape()
+        {
+            ClearAreaOfEverything(1650, 2530, 45.5f, 500.0f, false, false, false, false);
+            ApplyDamageToPed(LocalPlayer.Character.Handle, 101, false);
+
+            StartEscape();
         }
 
         private void SetWantedLevelEvent(int level)

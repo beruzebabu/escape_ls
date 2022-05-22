@@ -87,5 +87,19 @@ namespace escape_ls.Server
                 return;
             }
         }
+
+        [Command("restart_lobby")]
+        public void CommandRestartLobby(Player src)
+        {
+            try
+            {
+                TriggerEvent("escape_ls:LobbyRestarted", int.Parse(src.Handle.Trim()));
+            }
+            catch
+            {
+                Debug.WriteLine("Failed to restart lobby");
+                return;
+            }
+        }
     }
 }

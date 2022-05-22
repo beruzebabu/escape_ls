@@ -8,11 +8,16 @@ namespace escape_ls.Server
     {
         public int Id { get; set; }
         public int Difficulty { get; set; }
+        public EscapePlayer Creator { get; set; }
+        public EscapePlayerList LobbyPlayers { get; set; }
 
-        public Lobby(int id, int difficulty)
+        public Lobby(int id, int difficulty, EscapePlayer creator)
         {
             this.Id = id;
             this.Difficulty = difficulty;
+            this.Creator = creator;
+            this.LobbyPlayers = new EscapePlayerList();
+            this.LobbyPlayers.Add(creator);
         }
     }
 
