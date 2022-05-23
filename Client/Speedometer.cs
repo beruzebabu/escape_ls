@@ -19,7 +19,7 @@ namespace escape_ls.Client
         public Task OnTick()
         {
             if (LocalPlayer.Character.SeatIndex != VehicleSeat.Driver)
-                return Task.FromResult(0);
+                return Delay(20);
 
             float speed = (float)Math.Round(GetEntitySpeed(LocalPlayer.Character.Handle) * 3.6);
             float textWidth = (float)((speed.ToString().Length + 5) / 400.0);

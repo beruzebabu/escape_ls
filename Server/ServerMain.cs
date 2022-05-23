@@ -104,8 +104,9 @@ namespace escape_ls.Server
                     if (ep.Lobby != default(Lobby) && ep.Lobby.Difficulty < 0)
                     {
                         ep.Lobby.Difficulty = difficulty;
+                        ep.Lobby.Timestamp = DateTime.Now;
 
-                        Debug.WriteLine($"{player.Name} set difficulty to {difficulty}");
+                        Debug.WriteLine($"{player.Name} set difficulty to {difficulty}, start time: {ep.Lobby.Timestamp.ToShortTimeString()}");
 
                         player.TriggerEvent("escape_ls:toggleJoinScreen");
                         player.TriggerEvent("escape_ls:startEscape");
@@ -126,11 +127,13 @@ namespace escape_ls.Server
                 EscapePlayer ep = escapePlayerList.FindPlayer(player);
                 if (ep.Lobby != default(Lobby) && ep.Lobby.Id != 0 && ep.Lobby.Creator == ep)
                 {
+                    ep.Lobby.Timestamp = DateTime.Now;
+
                     TriggerClientEvent("chat:addMessage", new
                     {
                         color = new int[] { 255, 255, 255 },
                         multiline = false,
-                        args = new[] { "Gamemode", $"Lobby ^2{ep.Lobby.Id}^7 restarted" },
+                        args = new[] { "Gamemode", $"Lobby ^2{ep.Lobby.Id}^7 restarted, start time: {ep.Lobby.Timestamp.ToShortTimeString()}" },
                     });
 
                     foreach (EscapePlayer escapePlayer in ep.Lobby.LobbyPlayers)
@@ -158,11 +161,13 @@ namespace escape_ls.Server
                 if ((Math.Abs(p.Character.Position.X) > 5000.0 || Math.Abs(p.Character.Position.Y) > 8000.0 || p.Character.Position.Y < -5000.0) && escapePlayerList.FindPlayer(p).HasEscaped == false)
                 {
                     escapePlayerList.FindPlayer(p).HasEscaped = true;
+                    TimeSpan escapeTime = DateTime.Now.Subtract(escapePlayerList.FindPlayer(p).Lobby.Timestamp);
+
                     TriggerClientEvent("chat:addMessage", new
                     {
                         color = new int[] { 255, 255, 255 },
                         multiline = false,
-                        args = new[] { "Gamemode", $"{p.Name} has escaped Los Santos!" },
+                        args = new[] { "Gamemode", $"{p.Name} has escaped Los Santos! Escaping took {escapeTime}" },
                     });
                 }
             }

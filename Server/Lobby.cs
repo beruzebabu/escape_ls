@@ -10,6 +10,7 @@ namespace escape_ls.Server
         public int Difficulty { get; set; }
         public EscapePlayer Creator { get; set; }
         public EscapePlayerList LobbyPlayers { get; set; }
+        public DateTime Timestamp { get; set; }
 
         public Lobby(int id, int difficulty, EscapePlayer creator)
         {
@@ -18,6 +19,7 @@ namespace escape_ls.Server
             this.Creator = creator;
             this.LobbyPlayers = new EscapePlayerList();
             this.LobbyPlayers.Add(creator);
+            this.Timestamp = DateTime.Now;
         }
     }
 
