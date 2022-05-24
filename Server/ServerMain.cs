@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using CitizenFX.Core;
+using SQLite;
 using static CitizenFX.Core.Native.API;
 
 namespace escape_ls.Server
@@ -10,6 +12,8 @@ namespace escape_ls.Server
     {
         public EscapePlayerList escapePlayerList = new EscapePlayerList();
         public LobbyList lobbies = new LobbyList();
+        private string _databasePath;
+        private SQLiteAsyncConnection _connection;
 
         public ServerMain()
         {
@@ -19,9 +23,23 @@ namespace escape_ls.Server
             EventHandlers["escape_ls:LobbySelected"] += new Action<int, int>(OnLobbySelected);
             EventHandlers["escape_ls:DifficultySelected"] += new Action<int, int>(OnDifficultySelected);
             EventHandlers["escape_ls:LobbyRestarted"] += new Action<int>(OnLobbyRestarted);
+
+            _databasePath = Path.Combine(Directory.GetCurrentDirectory(), "escapeDB.db");
+
+            this._connection = new SQLiteAsyncConnection(_databasePath);
+
+            SetupDB();
         }
 
-        private void OnPlayerJoining([FromSource] Player player, string oldId)
+        public void SetupDB()
+        {
+            SQLiteConnection syncConnection = new SQLiteConnection(_databasePath);
+            syncConnection.CreateTable(typeof(DBPlayer));
+
+            syncConnection.Close();
+        }
+
+        private async void OnPlayerJoining([FromSource] Player player, string oldId)
         {
             Debug.WriteLine($"Player {player.Name} joined.");
             EscapePlayer escapePlayer = new EscapePlayer(player);
@@ -29,6 +47,30 @@ namespace escape_ls.Server
 
             EscapePlayer joinedPlayer = escapePlayerList.FindPlayer(player);
             Debug.WriteLine($"{joinedPlayer.Player.Name} added to EscapePlayerList");
+
+            foreach (string identifier in player.Identifiers)
+            {
+                Debug.WriteLine(identifier);
+            }
+
+            List<DBPlayer> dbPlayers = await _connection.QueryAsync<DBPlayer>("SELECT * FROM DBPlayer WHERE Identifier = ?", player.Identifiers["fivem"]);
+
+            foreach (DBPlayer player2 in dbPlayers)
+            {
+                Debug.WriteLine($"{player2.Name}");
+            }
+
+
+            if (dbPlayers.Count == 0)
+            {
+                DBPlayer dBPlayer = new DBPlayer()
+                {
+                    Name = player.Name,
+                    Identifier = player.Identifiers["fivem"]
+                };
+
+                await _connection.InsertAsync(dBPlayer);
+            }
 
             player.TriggerEvent("escape_ls:toggleJoinScreen");
         }
