@@ -26,7 +26,7 @@ namespace escape_ls.Server
 
             _databasePath = Path.Combine(Directory.GetCurrentDirectory(), "escapeDB.db");
 
-            this._connection = new SQLiteAsyncConnection(_databasePath);
+            this._connection = new SQLiteAsyncConnection(_databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create | SQLiteOpenFlags.SharedCache);
 
             SetupDB();
         }

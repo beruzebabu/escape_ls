@@ -1,6 +1,8 @@
 ﻿using CitizenFX.Core;
+using SQLite;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using static CitizenFX.Core.Native.API;
 
@@ -8,6 +10,15 @@ namespace escape_ls.Server
 {
     public class Commands : BaseScript
     {
+        private string _databasePath { get; set; }
+        private SQLiteAsyncConnection _connection { get; set; }
+        public Commands()
+        {
+            _databasePath = Path.Combine(Directory.GetCurrentDirectory(), "escapeDB.db");
+
+            this._connection = new SQLiteAsyncConnection(_databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create | SQLiteOpenFlags.SharedCache);
+        }
+
         [Command("spawn_car", Restricted = true)]
         public void CommandSpawnCar(Player src, string[] args)
         {
@@ -103,11 +114,26 @@ namespace escape_ls.Server
         }
 
         [Command("leaderboard")]
-        public void CommandShowLeaderboard(Player src)
+        public async void CommandShowLeaderboard(Player src)
         {
             try
             {
+                List<DBPlayer> dbPlayers = await DBPlayer.GetDBPlayerByIdentifierAsync(_connection, src.Identifiers["fivem"]);
 
+                if (dbPlayers.Count < 1)
+                    return;
+
+                List<EscapeRun> escapeRuns = await EscapeRun.GetFastestEscapeRunAsync(_connection);
+
+                if (escapeRuns.Count < 1)
+                    return;
+
+                src.TriggerEvent("chat:addMessage", new
+                {
+                    color = new int[] { 255, 255, 255 },
+                    multiline = false,
+                    args = new[] { "Gamemode", $"The current record is set by ^2{escapeRuns[0].DBPlayerId}^7, with a time to escape of ^*^1{escapeRuns[0].TimeTaken} seconds^7 at difficulty ^*^1{escapeRuns[0].Difficulty}" },
+                });
             }
             catch
             {
