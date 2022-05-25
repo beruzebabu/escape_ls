@@ -101,5 +101,19 @@ namespace escape_ls.Server
                 return;
             }
         }
+
+        [Command("leaderboard")]
+        public void CommandShowLeaderboard(Player src)
+        {
+            try
+            {
+
+            }
+            catch
+            {
+                Debug.WriteLine("Failed to show leaderboard");
+                return;
+            }
+        }
     }
 }
