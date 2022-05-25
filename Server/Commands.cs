@@ -8,7 +8,7 @@ namespace escape_ls.Server
 {
     public class Commands : BaseScript
     {
-        [Command("spawn_car")]
+        [Command("spawn_car", Restricted = true)]
         public void CommandSpawnCar(Player src, string[] args)
         {
             if (args.Length < 1)
@@ -32,7 +32,7 @@ namespace escape_ls.Server
             Debug.WriteLine($"{src.Character.Position}");
         }
 
-        [Command("teleport")]
+        [Command("teleport", Restricted = true)]
         public void CommandTeleportPlayer(Player src, string[] args)
         {
             if (args.Length < 3)

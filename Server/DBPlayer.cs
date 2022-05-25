@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace escape_ls.Server
 {
@@ -12,5 +13,15 @@ namespace escape_ls.Server
         public string Name { get; set; }
         [Indexed]
         public string Identifier { get; set; }
+
+        public static async Task<List<DBPlayer>> GetDBPlayersAsync(SQLiteAsyncConnection _connection)
+        {
+            return await _connection.QueryAsync<DBPlayer>("SELECT * FROM DBPlayer");
+        }
+
+        public static async Task<List<DBPlayer>> GetDBPlayerByIdentifierAsync(SQLiteAsyncConnection _connection, string identifier)
+        {
+            return await _connection.QueryAsync<DBPlayer>("SELECT * FROM DBPlayer WHERE Identifier = ?", identifier);
+        }
     }
 }

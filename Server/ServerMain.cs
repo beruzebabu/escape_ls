@@ -35,6 +35,7 @@ namespace escape_ls.Server
         {
             SQLiteConnection syncConnection = new SQLiteConnection(_databasePath);
             syncConnection.CreateTable(typeof(DBPlayer));
+            syncConnection.CreateTable(typeof(EscapeRun));
 
             syncConnection.Close();
         }
@@ -48,18 +49,7 @@ namespace escape_ls.Server
             EscapePlayer joinedPlayer = escapePlayerList.FindPlayer(player);
             Debug.WriteLine($"{joinedPlayer.Player.Name} added to EscapePlayerList");
 
-            foreach (string identifier in player.Identifiers)
-            {
-                Debug.WriteLine(identifier);
-            }
-
-            List<DBPlayer> dbPlayers = await _connection.QueryAsync<DBPlayer>("SELECT * FROM DBPlayer WHERE Identifier = ?", player.Identifiers["fivem"]);
-
-            foreach (DBPlayer player2 in dbPlayers)
-            {
-                Debug.WriteLine($"{player2.Name}");
-            }
-
+            List<DBPlayer> dbPlayers = await DBPlayer.GetDBPlayerByIdentifierAsync(_connection, player.Identifiers["fivem"]);
 
             if (dbPlayers.Count == 0)
             {
@@ -70,6 +60,19 @@ namespace escape_ls.Server
                 };
 
                 await _connection.InsertAsync(dBPlayer);
+            } else
+            {
+                List<EscapeRun> escapeRun = await EscapeRun.GetFastestEscapeRunByDBPlayerAsync(_connection, dbPlayers[0]);
+
+                if (escapeRun.Count > 0)
+                {
+                    TriggerClientEvent("chat:addMessage", new
+                    {
+                        color = new int[] { 255, 255, 255 },
+                        multiline = false,
+                        args = new[] { "Gamemode", $"Welcome ^2{player.Name}^7, your fastest escape was in ^*^1{escapeRun[0].TimeTaken} seconds" },
+                    });
+                }
             }
 
             player.TriggerEvent("escape_ls:toggleJoinScreen");
@@ -148,7 +151,7 @@ namespace escape_ls.Server
                         ep.Lobby.Difficulty = difficulty;
                         ep.Lobby.Timestamp = DateTime.Now;
 
-                        Debug.WriteLine($"{player.Name} set difficulty to {difficulty}, start time: {ep.Lobby.Timestamp.ToShortTimeString()}");
+                        Debug.WriteLine($"{player.Name} set difficulty to {difficulty}, start time: {ep.Lobby.Timestamp}");
 
                         player.TriggerEvent("escape_ls:toggleJoinScreen");
                         player.TriggerEvent("escape_ls:startEscape");
@@ -175,11 +178,12 @@ namespace escape_ls.Server
                     {
                         color = new int[] { 255, 255, 255 },
                         multiline = false,
-                        args = new[] { "Gamemode", $"Lobby ^2{ep.Lobby.Id}^7 restarted, start time: {ep.Lobby.Timestamp.ToShortTimeString()}" },
+                        args = new[] { "Gamemode", $"Lobby ^2{ep.Lobby.Id}^7 restarted, start time: {ep.Lobby.Timestamp}" },
                     });
 
                     foreach (EscapePlayer escapePlayer in ep.Lobby.LobbyPlayers)
                     {
+                        escapePlayer.HasEscaped = false;
                         escapePlayer.Player.TriggerEvent("escape_ls:restartEscape");
                     }
 
@@ -200,10 +204,14 @@ namespace escape_ls.Server
                 if (p.Character == null)
                     continue;
 
-                if ((Math.Abs(p.Character.Position.X) > 5000.0 || Math.Abs(p.Character.Position.Y) > 8000.0 || p.Character.Position.Y < -5000.0) && escapePlayerList.FindPlayer(p).HasEscaped == false)
+                EscapePlayer escapePlayer = escapePlayerList.FindPlayer(p);
+
+                if ((Math.Abs(p.Character.Position.X) > 5000.0 || Math.Abs(p.Character.Position.Y) > 8000.0 || p.Character.Position.Y < -5000.0) && escapePlayer.HasEscaped == false)
                 {
-                    escapePlayerList.FindPlayer(p).HasEscaped = true;
-                    TimeSpan escapeTime = DateTime.Now.Subtract(escapePlayerList.FindPlayer(p).Lobby.Timestamp);
+                    escapePlayer.HasEscaped = true;
+                    TimeSpan escapeTime = DateTime.Now.Subtract(escapePlayer.Lobby.Timestamp);
+
+                    Task.Run(() => SaveEscapeResult(escapePlayer, escapeTime));
 
                     TriggerClientEvent("chat:addMessage", new
                     {
@@ -238,6 +246,26 @@ namespace escape_ls.Server
             }
 
             return Delay(1000);
+        }
+
+        public async void SaveEscapeResult(EscapePlayer escapePlayer, TimeSpan escapeTime)
+        {
+            try
+            {
+                DBPlayer dbPlayer = (await DBPlayer.GetDBPlayerByIdentifierAsync(_connection, escapePlayer.Player.Identifiers["fivem"]))[0];
+
+                EscapeRun escapeRun = new EscapeRun()
+                {
+                    DBPlayerId = dbPlayer.Id,
+                    TimeTaken = Math.Round(escapeTime.TotalSeconds, 2),
+                    Difficulty = escapePlayer.Lobby.Difficulty,
+                };
+
+                await _connection.InsertAsync(escapeRun);
+            } catch
+            {
+                Debug.WriteLine($"Couldn't save EscapeRun for {escapePlayer.Player.Name} - {escapeTime.TotalSeconds}");
+            }
         }
     }
 }
