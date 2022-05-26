@@ -128,11 +128,13 @@ namespace escape_ls.Server
                 if (escapeRuns.Count < 1)
                     return;
 
+                DBPlayer fastestPlayer = (await DBPlayer.GetDBPlayerByIdAsync(_connection, escapeRuns[0].DBPlayerId))[0];
+
                 src.TriggerEvent("chat:addMessage", new
                 {
                     color = new int[] { 255, 255, 255 },
                     multiline = false,
-                    args = new[] { "Gamemode", $"The current record is set by ^2{escapeRuns[0].DBPlayerId}^7, with a time to escape of ^*^1{escapeRuns[0].TimeTaken} seconds^7 at difficulty ^*^1{escapeRuns[0].Difficulty}" },
+                    args = new[] { "Gamemode", $"The current record is set by ^2{fastestPlayer.Name}^7, with a time to escape of ^*^1{escapeRuns[0].TimeTaken} seconds^7 at difficulty ^*^1{escapeRuns[0].Difficulty}" },
                 });
             }
             catch
